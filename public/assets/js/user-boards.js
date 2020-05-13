@@ -53,7 +53,7 @@ function handleBoardCreate(event) {
             name: boardName
         },
         method: 'POST'
-    }).then(function(data) {
+    }).then(function() {
         getUserBoards();
         MicroModal.close('create-board');
     });
