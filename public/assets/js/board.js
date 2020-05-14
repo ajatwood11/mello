@@ -34,7 +34,9 @@ function getBoard(id) {
             renderBoard();
         })
         .catch(function(err) {
-            location.replace('/boards');
+            if (err.statusText === 'Unauthorized') {
+                location.replace('/boards');
+            }
         });
 }
 
@@ -77,7 +79,6 @@ function createLists(lists) {
         let $addCardButton = $('<button>Add a card...</button>').on('click',
             openCardCreateModal
         );
-
         $header.append($headerButton);
         $listContainer.append($header);
         $listContainer.append($cardUl);
@@ -108,14 +109,20 @@ function renderBoard() {
 
 function renderContributors() {
     let $contributorListItems = board.users.map(function(user) {
-        let $contributorListItem = $('<li>').text(user.email);
+        let $contributorListItem = $('<li>');
+        let $contributorSpan = $('<span>').text(user.email);
+        let $contributorDeleteButton = $('<button class="danger">Remove</button>')
+            .data(user)
+            .on('click', handleContributorDelete);
+
+        $contributorListItem.append($contributorSpan, $contributorDeleteButton);
+
         return $contributorListItem;
     });
 
     $contributorModalList.empty();
     $contributorModalList.append($contributorListItems);
 }
-
 
 function makeSortable() {
     Sortable.create($boardContainer[0], {
@@ -356,6 +363,22 @@ function openContributorModal() {
     displayMessage('');
 
     MicroModal.show('contribute');
+}
+
+function handleContributorDelete(event) {
+    let { id, email } = $(event.target).data();
+
+    $.ajax({
+        url: '/api/user_boards',
+        method: 'DELETE',
+        data: {
+            user_id: id,
+            board_id: board.id
+        }
+    }).then(function() {
+        init();
+        displayMessage(`Successfully removed user: ${email}`, 'success');
+    });
 }
 
 function displayMessage(msg, type = 'hidden') {
